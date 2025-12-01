@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SpotOn Authentication{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6366f1',
+                        secondary: '#8b5cf6',
+                        accent: '#ec4899',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen">
+    <div class="min-h-screen flex items-center justify-center p-4">
+        <div class="max-w-md w-full">
+            <!-- Logo/Brand -->
+            <div class="text-center mb-8">
+                <div class="flex items-center justify-center space-x-2 mb-4">
+                    <i class="fas fa-map-marker-alt text-primary text-4xl"></i>
+                    <h1 class="text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">SpotOn</h1>
+                </div>
+                <p class="text-gray-600">Find Your Perfect Study Spot</p>
+            </div>
+
+            <!-- Main Content -->
+            <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
+                {% block content %}
+                {% endblock %}
+            </div>
+
+            <!-- Back to App Link -->
+            <div class="text-center mt-6">
+                <a href="http://localhost:5500" class="text-primary hover:text-secondary transition-colors">
+                    <i class="fas fa-arrow-left mr-2"></i>Back to App
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
