@@ -136,7 +136,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:8080",
     "http://127.0.0.1:8080",
     "https://063db69c-5500.uks1.devtunnels.ms",
-    "http://localhost:63342"
+    "http://localhost:63342",
+    "https://spoton-unilag.netlify.app"
 ]
 
 CORS_ALLOW_CREDENTIALS = True
@@ -148,7 +149,8 @@ CSRF_TRUSTED_ORIGINS = [
     "http://localhost:8080",
     "http://127.0.0.1:8080",
     "https://063db69c-5500.uks1.devtunnels.ms",
-    "http://localhost:63342"
+    "http://localhost:63342",
+    "https://spoton-unilag.netlify.app"
 ]
 
 # Session Settings
@@ -157,7 +159,7 @@ SESSION_COOKIE_HTTPONLY = True
 
 # Login redirect
 LOGIN_REDIRECT_URL = '/logged-in/'
-LOGOUT_REDIRECT_URL = 'http://localhost:5500'
+LOGOUT_REDIRECT_URL = 'https://spoton-unilag.netlify.app'
 
 
 REST_FRAMEWORK = {
