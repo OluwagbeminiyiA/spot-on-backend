@@ -2,6 +2,9 @@ from datetime import timezone, datetime
 
 from django.shortcuts import render
 from django.contrib.auth.models import User
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+from django.views.decorators.vary import vary_on_cookie
 from rest_framework.generics import ListAPIView, CreateAPIView, RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view
@@ -15,6 +18,7 @@ from api.serializers import SpotSerializer, ReviewSerializer, StatusReportSerial
 
 # Create your views here.
 
+@method_decorator(cache_page(60 * 60), name='dispatch')
 class SpotListView(ListAPIView):
     queryset = Spot.objects.all()
     serializer_class = SpotSerializer
@@ -36,13 +40,14 @@ class ReviewCreateView(CreateAPIView):
         serializer.save(user=self.request.user)
 
 
+@method_decorator(cache_page(60 * 60), name='dispatch')
 class SpotDetailView(RetrieveAPIView):
     queryset = Spot.objects.all()
     serializer_class = SpotDetailSerializer
 
 
 class StatusReportView(CreateAPIView):
-    queryset = Spot.objects.all()
+    queryset = Spot.objects.prefetch_related('status_reports')
     serializer_class = StatusReportSerializer
     permission_classes = [IsAuthenticated]
 
@@ -112,6 +117,8 @@ def register_user(request):
 class ClassFreeRoomsView(ListAPIView):
     serializer_class = LectureHallSerializer
 
+    @method_decorator(cache_page(60 * 60 * 2))
+    @method_decorator(vary_on_cookie)
     def get_queryset(self):
         now = datetime.now()
         day = now.weekday()
