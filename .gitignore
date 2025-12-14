@@ -442,3 +442,6 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.toptal.com/developers/gitignore/api/windows,django,pycharm+iml,pycharm+all,pycharm,venv,virtualenv
+
+
+spoton_backend/local_settings.py

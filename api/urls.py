@@ -9,5 +9,5 @@ urlpatterns = [
     path('spots/<int:pk>/', views.SpotDetailView.as_view(), name='spot_detail'),
     path('status-reports/create/', views.StatusReportView.as_view(), name='status_report'),
     path('auth/register/', views.register_user, name='register'),
-    path('free-halls', views.ClassFreeRoomsView.as_view(), name='free_halls'),
+    path('free-halls/', views.ClassFreeRoomsView.as_view(), name='free_halls'),
 ]

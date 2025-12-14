@@ -114,18 +114,14 @@ def register_user(request):
         )
 
 
+@method_decorator(cache_page(60 * 60 * 2), name='dispatch')
 class ClassFreeRoomsView(ListAPIView):
     serializer_class = LectureHallSerializer
 
-    @method_decorator(cache_page(60 * 60 * 2))
-    @method_decorator(vary_on_cookie)
     def get_queryset(self):
         now = datetime.now()
         day = now.weekday()
-        time = now.time()
 
         return LectureHall.objects.filter(
             free_halls__day_of_week=day,
-            free_halls__start_time__lte=time,
-            free_halls__end_time__gte=time
         ).distinct()
