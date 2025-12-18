@@ -1,10 +1,9 @@
-from datetime import timedelta, timezone, datetime
+from datetime import datetime
 
 from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
 from .models import Spot, LectureHall, ClassFreeRooms
-
 
 # Create your tests here.
 
@@ -28,13 +27,16 @@ class ApiTests(TestCase):
                                                         is_approved=True,
                                                         )
 
+        now = datetime.now()
+        day = now.weekday()
+
         class_free_room = ClassFreeRooms.objects.create(spot=free_lecture_halls,
-                                                        day_of_week=6,
+                                                        day_of_week=day,
                                                         start_time='08:00:00',
                                                         end_time='22:00:00',
                                                         )
         class_free_room = ClassFreeRooms.objects.create(spot=free_lecture_halls,
-                                                        day_of_week=6,
+                                                        day_of_week=day,
                                                         start_time='23:00:00',
                                                         end_time='00:00:00',
                                                         )

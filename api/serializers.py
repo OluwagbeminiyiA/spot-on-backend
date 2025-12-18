@@ -1,14 +1,29 @@
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 
-from api.models import Spot, Review, StatusReport, LectureHall
+from api.models import Spot, Review, StatusReport, LectureHall, ClassFreeRooms
+from datetime import timedelta
+from django.utils import timezone
 
 
 class ReviewSerializer(ModelSerializer):
+    latest_status = serializers.SerializerMethodField()
+
     class Meta:
         model = Review
         fields = '__all__'
         read_only_fields = ('id', 'timestamp', 'user')
+
+    def get_latest_status(self, obj):
+        latest = StatusReport.objects.filter(spot=obj).latest('-timestamp').first()
+
+        if latest is None:
+            return "Unknown"
+
+        expiration_time = timezone.now() + timedelta(minutes=45)
+
+        if latest.timestamp > expiration_time:
+            return f"Unknown but was {latest} {expiration_time} minutes ago"
 
 
 class StatusReportSerializer(ModelSerializer):
@@ -46,8 +61,15 @@ class SpotDetailSerializer(SpotSerializer):
         fields = '__all__'
 
 
+class ClassFreeRoomsSerializer(ModelSerializer):
+    class Meta:
+        model = ClassFreeRooms
+        fields = '__all__'
+
+
 class LectureHallSerializer(ModelSerializer):
+    free_halls = ClassFreeRoomsSerializer(many=True)
+
     class Meta:
         model = LectureHall
         fields = '__all__'
-
