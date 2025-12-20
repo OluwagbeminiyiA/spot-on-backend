@@ -1,19 +1,27 @@
-from datetime import timezone, datetime
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from datetime import datetime
 
-from django.shortcuts import render
 from django.contrib.auth.models import User
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
 from django.utils.decorators import method_decorator
+from django.utils.encoding import force_str
 from django.views.decorators.cache import cache_page
-from django.views.decorators.vary import vary_on_cookie
+from jwt.utils import force_bytes
+from rest_framework import status
+from rest_framework.decorators import api_view
 from rest_framework.generics import ListAPIView, CreateAPIView, RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework.views import APIView
 
 from api.models import Spot, LectureHall
 from api.serializers import SpotSerializer, ReviewSerializer, StatusReportSerializer, SpotDetailSerializer, \
     LectureHallSerializer
+
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 
 # Create your views here.
@@ -77,6 +85,27 @@ def register_user(request):
             status=status.HTTP_400_BAD_REQUEST
         )
 
+    # Ensure it is a school email
+    if "@live.unilag.edu.ng" not in email:
+        return Response(
+            {'detail': 'Email address is invalid, enter a University of Lagos valid email address.'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    year = datetime.now().year
+    year = str(year)[-2:]
+
+    # Checking if the matriculation number is valid in the easiest way possible. It shouldn't be valid after 7 years max mostly because of strike
+    try:
+        if (int(year) - int(email[:2])) > 7 or (int(year) - int(email[:2])) < 0:
+            return Response(
+                {
+                    'detail': 'Invalid email address, this email should no longer be valid. Email us if you think we\'ve made a mistake'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    except ValueError:
+        pass
+
     # Validate email
     if email and User.objects.filter(email=email).exists():
         return Response(
@@ -95,18 +124,29 @@ def register_user(request):
         user = User.objects.create_user(
             username=username,
             email=email,
-            password=password
+            password=password,
+            is_active=False,
         )
-        return Response(
-            {
-                'detail': 'User created successfully',
-                'user': {
-                    'username': user.username,
-                    'email': user.email
-                }
-            },
-            status=status.HTTP_201_CREATED
-        )
+
+        uid = urlsafe_base64_encode(force_bytes(str(user.pk)))
+        token = default_token_generator.make_token(user)
+
+        domain = request.get_host()
+        try:
+            import spoton_backend.local_settings
+            domain = f"http://{domain}"
+        except ImportError:
+            domain = f"https://{domain}"
+        verify_link = f"{domain}/api/verify-email/{uid}/{token}/"
+        print(verify_link)
+
+        subject = "Verify your SpotOn account"
+        message = f"Hi {username},\n\nPlease click the link below to verify your Unilag Email:\n\n{verify_link}"
+        send_mail(subject, message, 'gagbedejobi@gmail.com', [user.email])
+        return Response({
+            "message": "Registration successful! Please check your email to verify your account."
+        }, status=status.HTTP_201_CREATED)
+
     except Exception as e:
         return Response(
             {'detail': str(e)},
@@ -125,3 +165,19 @@ class ClassFreeRoomsView(ListAPIView):
         return LectureHall.objects.filter(
             free_halls__day_of_week=day,
         ).distinct()
+
+
+class VerifyEmailView(APIView):
+    def get(self, request, uidb64, token):
+        try:
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(pk=uid)
+        except (TypeError, User.DoesNotExist, OverflowError, ValueError):
+            user = None
+
+        if user is not None and default_token_generator.check_token(user, token):
+            user.is_active = True
+            user.save()
+            return Response({"message": "Email verified! You can now log in."}, status=status.HTTP_200_OK)
+        else:
+            return Response({"message": "Token expired!"}, status=status.HTTP_400_BAD_REQUEST)

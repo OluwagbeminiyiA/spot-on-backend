@@ -10,4 +10,5 @@ urlpatterns = [
     path('status-reports/create/', views.StatusReportView.as_view(), name='status_report'),
     path('auth/register/', views.register_user, name='register'),
     path('free-halls/', views.ClassFreeRoomsView.as_view(), name='free_halls'),
+    path('verify-email/<uidb64>/<token>/', views.VerifyEmailView.as_view(), name='verify_email'),
 ]
