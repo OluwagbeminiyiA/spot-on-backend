@@ -1,3 +1,4 @@
+from autoslug import AutoSlugField
 from django.contrib.auth.models import User
 from django.db import models
 
@@ -35,13 +36,11 @@ class Spot(models.Model):
     name = models.CharField(max_length=100)
     location_description = models.TextField()
     capacity_ratings = models.CharField(max_length=100, choices=CAPACITY_CHOICES)
-    has_power_outlets = models.BooleanField(default=False)
     is_quiet = models.BooleanField(default=False)
     operating_hours = models.TextField(blank=True)
     is_approved = models.BooleanField(default=False)
+    slug = AutoSlugField(populate_from='name', default='')
 
-    def __str__(self):
-        return self.name + " " + self.location_description[:20]
 
     class Meta:
         ordering = ['is_approved']
@@ -95,3 +94,17 @@ class ClassFreeRooms(models.Model):
 
     def __str__(self):
         return f"{self.spot.name} is free on ({self.get_day_of_week_display()}) from {self.start_time} to {self.end_time}"
+
+
+class Amenities(models.Model):
+    amenity_name = models.CharField(max_length=100)
+    slug = AutoSlugField(populate_from='amenity_name', unique=True)
+    description = models.TextField(blank=True)
+
+    def __str__(self):
+        return self.amenity_name
+
+
+class SpotAmenities(models.Model):
+    spot = models.ForeignKey(Spot, on_delete=models.CASCADE, related_name='amenities')
+    amenities = models.ForeignKey(Amenities, on_delete=models.CASCADE, related_name='spots')

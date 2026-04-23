@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 
-from core_spoton.api.models import Spot, Review, StatusReport, LectureHall, ClassFreeRooms
+from core_spoton.api.models import Spot, Review, StatusReport, LectureHall, ClassFreeRooms, SpotAmenities
 from datetime import timedelta
 from django.utils import timezone
 
@@ -38,11 +38,12 @@ class SpotSerializer(ModelSerializer):
 
     reviews = ReviewSerializer(many=True)
     status_reports = StatusReportSerializer(many=True)
+    amenities = SpotAmenities()
 
     class Meta:
         model = Spot
-        fields = ['id', 'name', 'location_description', 'capacity_ratings', 'has_power_outlets',
-                  'is_approved', 'is_quiet', 'operating_hours', 'reviews', 'status_reports', 'latest_status']
+        fields = ['id', 'name', 'location_description', 'capacity_ratings',
+                  'is_approved', 'is_quiet', 'operating_hours', 'slug', 'reviews', 'status_reports', 'latest_status', 'amenities']
         read_only_fields = ('id', 'is_approved')
 
     def get_latest_status(self, obj):

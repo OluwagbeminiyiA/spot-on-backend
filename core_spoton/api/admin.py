@@ -16,7 +16,12 @@ class LectureHallAdmin(admin.ModelAdmin):
     list_display = ['name', 'is_approved']
 
 
-admin.site.register(Spot)
+class SpotAdmin(admin.ModelAdmin):
+    model = Spot
+    prepopulated_fields = {'slug': ('name',)}
+
+
+admin.site.register(Spot, SpotAdmin)
 admin.site.register(StatusReport)
 admin.site.register(Review)
 admin.site.register(LectureHall, LectureHallAdmin)
