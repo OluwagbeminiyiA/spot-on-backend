@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 
-from api.models import Spot, Review, StatusReport, LectureHall, ClassFreeRooms
+from core_spoton.api.models import Spot, Review, StatusReport, LectureHall, ClassFreeRooms
 from datetime import timedelta
 from django.utils import timezone
 

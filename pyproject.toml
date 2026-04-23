@@ -1,0 +1,30 @@
+[project]
+name = "spoton"
+version = "0.1.0"
+description = "The backend system for SpotOn, a campus utility service designed to help University of Lagos (UNILAG) students find study spots, hangout locations, and check real-time availability of lecture halls. This project relies on user-generated content (reviews and status reports) to provide up-to-date information."
+authors = [
+    {name = "Oluwagbeminiyi Agbedejobi",email = "gagbedejobi@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "django (>=5.2.8,<7.0.0)",
+    "djangorestframework (>=3.16.1,<4.0.0)",
+    "django-cors-headers (==4.9.0)",
+    "djangorestframework-simplejwt (==5.5.1)",
+    "python-decouple (==3.8)"
+]
+
+[dependency-groups]
+dev = [
+    "django (==5.2.8)",
+    "django-cors-headers (==4.9.0)",
+    "djangorestframework (==3.16.1)",
+    "djangorestframework-simplejwt (==5.5.1)",
+    "python-decouple (==3.8)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

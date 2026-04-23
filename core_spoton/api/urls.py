@@ -1,6 +1,6 @@
 from django.urls import path, include
 
-from api import views
+from core_spoton.api import views
 
 urlpatterns = [
     path('spots/', views.SpotListView.as_view(), name='spots'),

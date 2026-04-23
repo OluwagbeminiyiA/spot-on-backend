@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from api.models import Spot, StatusReport, Review, ClassFreeRooms, LectureHall
+from core_spoton.api.models import Spot, StatusReport, Review, ClassFreeRooms, LectureHall
 
 
 # Register your models here.
