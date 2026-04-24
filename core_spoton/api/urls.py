@@ -11,4 +11,9 @@ urlpatterns = [
     path('auth/register/', views.register_user, name='register'),
     path('free-halls/', views.ClassFreeRoomsView.as_view(), name='free_halls'),
     path('verify-email/<uidb64>/<token>/', views.VerifyEmailView.as_view(), name='verify_email'),
+    path('amenities/', views.AmenitiesListView.as_view(), name='amenities_list'),
+    path('spot-amenities/', views.SpotAmenitiesListView.as_view(), name='spot_amenities'),
+    path('spots/saved/', views.SavedSpotsListView.as_view(), name='saved_spots'),
+    path('spots/<int:spot_pk>/save/', views.SaveSpotView.as_view(), name='save_spot'),
+
 ]

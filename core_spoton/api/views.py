@@ -15,9 +15,9 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from core_spoton.api.models import Spot, LectureHall
+from core_spoton.api.models import Spot, LectureHall, Amenities, SpotAmenities, SavedSpots
 from core_spoton.api.serializers import SpotSerializer, ReviewSerializer, StatusReportSerializer, SpotDetailSerializer, \
-    LectureHallSerializer
+    LectureHallSerializer, AmenitiesSerializer, SpotAmenitiesSerializer, SavedSpotSerializer
 
 from django.contrib.auth import get_user_model
 
@@ -30,6 +30,7 @@ User = get_user_model()
 class SpotListView(ListAPIView):
     queryset = Spot.objects.all()
     serializer_class = SpotSerializer
+    ordering_fields = ['id', 'name', 'capacity_ratings', 'is_quiet']
 
 
 class SpotCreateView(CreateAPIView):
@@ -41,7 +42,6 @@ class SpotCreateView(CreateAPIView):
 class ReviewCreateView(CreateAPIView):
     queryset = Spot.objects.all()
     serializer_class = ReviewSerializer
-
     permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
@@ -157,6 +157,7 @@ def register_user(request):
 @method_decorator(cache_page(60 * 60 * 2), name='dispatch')
 class ClassFreeRoomsView(ListAPIView):
     serializer_class = LectureHallSerializer
+    ordering_fields = ['day_of_week', 'end_time']
 
     def get_queryset(self):
         now = datetime.now()
@@ -181,3 +182,49 @@ class VerifyEmailView(APIView):
             return Response({"message": "Email verified! You can now log in."}, status=status.HTTP_200_OK)
         else:
             return Response({"message": "Token expired!"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AmenitiesListView(ListAPIView):
+    serializer_class = AmenitiesSerializer
+    ordering_fields = ['amenity_name', 'id']
+
+    def get_queryset(self):
+        queryset = Amenities.objects.all()
+
+        has_power_outlets = self.request.query_params.get('has_power_outlets')
+        is_quiet = self.request.query_params.get('is_quiet')
+        has_wifi = self.request.query_params.get('has_wifi')
+
+        if has_power_outlets is not None:
+            queryset = queryset.filter(has_power_outlets=has_power_outlets.lower() == 'true')
+
+        if is_quiet is not None:
+            queryset = queryset.filter(is_quiet=is_quiet.lower() == 'true')
+
+        if has_wifi is not None:
+            queryset = queryset.filter(has_wifi=has_wifi.lower() == 'true')
+
+        return queryset
+
+
+class SpotAmenitiesListView(ListAPIView):
+    queryset = SpotAmenities.objects.all()
+    serializer_class = SpotAmenitiesSerializer
+    ordering_fields = ['spot__name', 'amenity__name']
+
+
+# TODO: Uncomment the permission_classes in saved spots view and return only saved spots requested by the user
+class SavedSpotsListView(ListAPIView):
+    serializer_class = SavedSpotSerializer
+    # permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # return SavedSpots.objects.filter(user__id=self.request.user.id)
+        return SavedSpots.objects.filter(user__id=1)
+
+
+# TODO: Uncomment the permission class in save spot view and change the user id to self.request.user.id in perform_create method to save the spot for the authenticated user
+class SaveSpotView(CreateAPIView):
+    serializer_class = SavedSpotSerializer
+    # permission_classes = [IsAuthenticated]
+

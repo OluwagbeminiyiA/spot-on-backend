@@ -24,3 +24,10 @@ install:
 shell:
 	poetry run python -m core_spoton.manage shell
 
+.PHONY: test
+test:
+	poetry run python -m core_spoton.manage test
+
+.PHONY: test_api
+test_api:
+	poetry run python -m core_spoton.manage test core_spoton.api
