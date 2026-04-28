@@ -3,8 +3,9 @@ from datetime import datetime
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from rest_framework import status
-from rest_framework.test import APIClient, force_authenticate
-from .models import Spot, LectureHall, ClassFreeRooms
+from rest_framework.test import APIClient
+
+from .models import ClassFreeRooms, LectureHall, Spot
 
 User = get_user_model()
 

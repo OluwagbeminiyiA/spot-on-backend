@@ -1,36 +1,42 @@
-from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from datetime import datetime
+from importlib.util import find_spec
 
 from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.utils.decorators import method_decorator
 from django.utils.encoding import force_str
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.views.decorators.cache import cache_page
+
 from jwt.utils import force_bytes
 from rest_framework import status
 from rest_framework.decorators import api_view
-from rest_framework.generics import ListAPIView, CreateAPIView, RetrieveAPIView
+from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from core_spoton.api.models import Spot, LectureHall, Amenities, SpotAmenities, SavedSpots
-from core_spoton.api.serializers import SpotSerializer, ReviewSerializer, StatusReportSerializer, SpotDetailSerializer, \
-    LectureHallSerializer, AmenitiesSerializer, SpotAmenitiesSerializer, SavedSpotSerializer
-
-from django.contrib.auth import get_user_model
-
-User = get_user_model()
-
+from core_spoton.api.models import Amenities, LectureHall, SavedSpots, Spot, SpotAmenities
+from core_spoton.api.serializers import (
+    AmenitiesSerializer,
+    LectureHallSerializer,
+    ReviewSerializer,
+    SavedSpotSerializer,
+    SpotAmenitiesSerializer,
+    SpotDetailSerializer,
+    SpotSerializer,
+    StatusReportSerializer,
+)
 
 # Create your views here.
 
-@method_decorator(cache_page(60 * 60), name='dispatch')
+
+@method_decorator(cache_page(60 * 60), name="dispatch")
 class SpotListView(ListAPIView):
     queryset = Spot.objects.all()
     serializer_class = SpotSerializer
-    ordering_fields = ['id', 'name', 'capacity_ratings', 'is_quiet']
+    ordering_fields = ["id", "name", "capacity_ratings", "is_quiet"]
 
 
 class SpotCreateView(CreateAPIView):
@@ -48,14 +54,14 @@ class ReviewCreateView(CreateAPIView):
         serializer.save(user=self.request.user)
 
 
-@method_decorator(cache_page(60 * 60), name='dispatch')
+@method_decorator(cache_page(60 * 60), name="dispatch")
 class SpotDetailView(RetrieveAPIView):
     queryset = Spot.objects.all()
     serializer_class = SpotDetailSerializer
 
 
 class StatusReportView(CreateAPIView):
-    queryset = Spot.objects.prefetch_related('status_reports')
+    queryset = Spot.objects.prefetch_related("status_reports")
     serializer_class = StatusReportSerializer
     permission_classes = [IsAuthenticated]
 
@@ -65,31 +71,28 @@ class StatusReportView(CreateAPIView):
 
 # Authentication API Views
 
-@api_view(['POST'])
+
+@api_view(["POST"])
 def register_user(request):
     """Register a new user"""
-    username = request.data.get('username')
-    email = request.data.get('email')
-    password = request.data.get('password')
+    username = request.data.get("username")
+    email = request.data.get("email")
+    password = request.data.get("password")
 
     if not username or not password:
-        return Response(
-            {'detail': 'Username and password are required'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+        return Response({"detail": "Username and password are required"}, status=status.HTTP_400_BAD_REQUEST)
 
     # Validate username
     if User.objects.filter(username=username).exists():
         return Response(
-            {'username': ['A user with that username already exists.']},
-            status=status.HTTP_400_BAD_REQUEST
+            {"username": ["A user with that username already exists."]}, status=status.HTTP_400_BAD_REQUEST
         )
 
     # Ensure it is a school email
     if "@live.unilag.edu.ng" not in email:
         return Response(
-            {'detail': 'Email address is invalid, enter a University of Lagos valid email address.'},
-            status=status.HTTP_400_BAD_REQUEST
+            {"detail": "Email address is invalid, enter a University of Lagos valid email address."},
+            status=status.HTTP_400_BAD_REQUEST,
         )
 
     year = datetime.now().year
@@ -100,24 +103,21 @@ def register_user(request):
         if (int(year) - int(email[:2])) > 7 or (int(year) - int(email[:2])) < 0:
             return Response(
                 {
-                    'detail': 'Invalid email address, this email should no longer be valid. Email us if you think we\'ve made a mistake'},
-                status=status.HTTP_400_BAD_REQUEST
+                    "detail": "Invalid email address, this email should no longer be valid. Email us if you think we've made a mistake"
+                },
+                status=status.HTTP_400_BAD_REQUEST,
             )
     except ValueError:
         pass
 
     # Validate email
     if email and User.objects.filter(email=email).exists():
-        return Response(
-            {'email': ['A user with that email already exists.']},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+        return Response({"email": ["A user with that email already exists."]}, status=status.HTTP_400_BAD_REQUEST)
 
     # Validate password length
     if len(password) < 8:
         return Response(
-            {'password': ['Password must be at least 8 characters long.']},
-            status=status.HTTP_400_BAD_REQUEST
+            {"password": ["Password must be at least 8 characters long."]}, status=status.HTTP_400_BAD_REQUEST
         )
 
     try:
@@ -132,32 +132,29 @@ def register_user(request):
         token = default_token_generator.make_token(user)
 
         domain = request.get_host()
-        try:
-            import spoton_backend.local_settings
-            domain = f"http://{domain}"
-        except ImportError:
-            domain = f"https://{domain}"
-        verify_link = f"{domain}/api/verify-email/{uid}/{token}/"
-        print(verify_link)
+        link = (
+            f"http://{domain}"
+            if find_spec("core_spoton.spoton_backend.local_settings") is not None
+            else f"https://{domain}"
+        )
+        verify_link = f"{link}/api/verify-email/{uid}/{token}/"
 
         subject = "Verify your SpotOn account"
         message = f"Hi {username},\n\nPlease click the link below to verify your Unilag Email:\n\n{verify_link}"
-        send_mail(subject, message, 'gagbedejobi@gmail.com', [user.email])
-        return Response({
-            "message": "Registration successful! Please check your email to verify your account."
-        }, status=status.HTTP_201_CREATED)
-
-    except Exception as e:
+        send_mail(subject, message, "gagbedejobi@gmail.com", [user.email])
         return Response(
-            {'detail': str(e)},
-            status=status.HTTP_400_BAD_REQUEST
+            {"message": "Registration successful! Please check your email to verify your account."},
+            status=status.HTTP_201_CREATED,
         )
 
+    except Exception as e:
+        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-@method_decorator(cache_page(60 * 60 * 2), name='dispatch')
+
+@method_decorator(cache_page(60 * 60 * 2), name="dispatch")
 class ClassFreeRoomsView(ListAPIView):
     serializer_class = LectureHallSerializer
-    ordering_fields = ['day_of_week', 'end_time']
+    ordering_fields = ["day_of_week", "end_time"]
 
     def get_queryset(self):
         now = datetime.now()
@@ -186,23 +183,23 @@ class VerifyEmailView(APIView):
 
 class AmenitiesListView(ListAPIView):
     serializer_class = AmenitiesSerializer
-    ordering_fields = ['amenity_name', 'id']
+    ordering_fields = ["amenity_name", "id"]
 
     def get_queryset(self):
         queryset = Amenities.objects.all()
 
-        has_power_outlets = self.request.query_params.get('has_power_outlets')
-        is_quiet = self.request.query_params.get('is_quiet')
-        has_wifi = self.request.query_params.get('has_wifi')
+        has_power_outlets = self.request.query_params.get("has_power_outlets")
+        is_quiet = self.request.query_params.get("is_quiet")
+        has_wifi = self.request.query_params.get("has_wifi")
 
         if has_power_outlets is not None:
-            queryset = queryset.filter(has_power_outlets=has_power_outlets.lower() == 'true')
+            queryset = queryset.filter(has_power_outlets=has_power_outlets.lower() == "true")
 
         if is_quiet is not None:
-            queryset = queryset.filter(is_quiet=is_quiet.lower() == 'true')
+            queryset = queryset.filter(is_quiet=is_quiet.lower() == "true")
 
         if has_wifi is not None:
-            queryset = queryset.filter(has_wifi=has_wifi.lower() == 'true')
+            queryset = queryset.filter(has_wifi=has_wifi.lower() == "true")
 
         return queryset
 
@@ -210,7 +207,7 @@ class AmenitiesListView(ListAPIView):
 class SpotAmenitiesListView(ListAPIView):
     queryset = SpotAmenities.objects.all()
     serializer_class = SpotAmenitiesSerializer
-    ordering_fields = ['spot__name', 'amenity__name']
+    ordering_fields = ["spot__name", "amenity__name"]
 
 
 # TODO: Uncomment the permission_classes in saved spots view and return only saved spots requested by the user
@@ -227,4 +224,3 @@ class SavedSpotsListView(ListAPIView):
 class SaveSpotView(CreateAPIView):
     serializer_class = SavedSpotSerializer
     # permission_classes = [IsAuthenticated]
-

@@ -1,33 +1,45 @@
-.PHONY: run-server
+.PHONY: all clean run-server migrate create-superuser migrations install shell test test_api
+
+all: install migrations migrate
+	@echo "Setup complete! Run 'make run-server' to start the development server."
+
+clean:
+	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+	find . -type f -name "*.pyc" -delete
+	find . -type f -name "*.pyo" -delete
+	find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
+	find . -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
+
 run-server:
 	poetry run python -m core_spoton.manage runserver
 
-
-.PHONY: migrate
 migrate:
 	poetry run python -m core_spoton.manage migrate
 
-
-.PHONY: create-superuser
 create-superuser:
 	poetry run python -m core_spoton.manage createsuperuser
 
-.PHONY: migrations
 migrations:
 	poetry run python -m core_spoton.manage makemigrations
 
-.PHONY: install
 install:
 	poetry install
 
-.PHONY: shell
 shell:
 	poetry run python -m core_spoton.manage shell
 
-.PHONY: test
 test:
 	poetry run python -m core_spoton.manage test
 
-.PHONY: test_api
 test_api:
 	poetry run python -m core_spoton.manage test core_spoton.api
+
+install-pre-commit:
+	poetry run pre-commit clean
+	poetry run pre-commit install
+
+lint:
+	poetry run pre-commit run --all-files
+
+update:
+	poetry run pre-commit autoupdate

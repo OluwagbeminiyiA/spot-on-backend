@@ -1,9 +1,10 @@
 
 import os
 from datetime import timedelta
-from email.policy import default
+from importlib.util import find_spec
 from pathlib import Path
-from decouple import config, Csv
+
+from decouple import Csv, config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -170,8 +171,7 @@ SIMPLE_JWT = {
 
 }
 
-try:
+if find_spec("core_spoton.spoton_backend.local_settings") is not None:
     from .local_settings import *
-
-except ImportError:
+else:
     pass

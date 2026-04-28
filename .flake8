@@ -1,0 +1,23 @@
+[flake8]
+# Set the maximum line length (PEP 8 recommends 79, but many use 88 or 100)
+max-line-length = 88
+
+# Specify files or directories to ignore
+exclude =
+    .git,
+    __pycache__,
+    build,
+    dist,
+    venv,
+    .venv,
+    .tox,
+    *.egg-info
+
+# Max cyclomatic complexity allowed (McCabe complexity)
+max-complexity = 10
+
+# Show the source code for each error
+show-source = True
+
+# Count the total number of errors
+statistics = True
