@@ -7,7 +7,7 @@ from pathlib import Path
 from decouple import Csv, config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
+BASE_DIR: Path = Path(__file__).resolve().parent.parent.parent
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -170,6 +170,11 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
 
 }
+
+DJANGO_LOG_LEVEL = 'DEBUG'
+
+from core_spoton.spoton_backend.logging import LOGGING
+
 
 if find_spec("core_spoton.spoton_backend.local_settings") is not None:
     from .local_settings import *

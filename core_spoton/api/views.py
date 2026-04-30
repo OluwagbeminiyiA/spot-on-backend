@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from importlib.util import find_spec
 
@@ -30,6 +31,8 @@ from core_spoton.api.serializers import (
 )
 
 # Create your views here.
+
+logger = logging.getLogger(__name__)
 
 
 @method_decorator(cache_page(60 * 60), name="dispatch")
@@ -160,6 +163,7 @@ class ClassFreeRoomsView(ListAPIView):
         now = datetime.now()
         day = now.weekday()
 
+        logger.debug("Free Class rooms have been return successfully")
         return LectureHall.objects.filter(
             free_halls__day_of_week=day,
         ).distinct()
