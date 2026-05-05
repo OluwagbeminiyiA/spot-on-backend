@@ -35,6 +35,12 @@ from core_spoton.api.serializers import (
 logger = logging.getLogger(__name__)
 
 
+def _email_domain(email: str | None) -> str | None:
+    if not email or "@" not in email:
+        return None
+    return email.split("@", 1)[1]
+
+
 @method_decorator(cache_page(60 * 60), name="dispatch")
 class SpotListView(ListAPIView):
     queryset = Spot.objects.all()
@@ -47,6 +53,10 @@ class SpotCreateView(CreateAPIView):
     serializer_class = SpotSerializer
     permission_classes = [IsAuthenticated]
 
+    def perform_create(self, serializer):
+        spot = serializer.save()
+        logger.info("Spot created spot_id=%s", spot.id)
+
 
 class ReviewCreateView(CreateAPIView):
     queryset = Spot.objects.all()
@@ -54,7 +64,13 @@ class ReviewCreateView(CreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        review = serializer.save(user=self.request.user)
+        logger.info(
+            "Review created user_id=%s spot_id=%s rating=%s",
+            review.user_id,
+            review.spot_id,
+            review.rating,
+        )
 
 
 @method_decorator(cache_page(60 * 60), name="dispatch")
@@ -69,7 +85,13 @@ class StatusReportView(CreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        report = serializer.save(user=self.request.user)
+        logger.info(
+            "Status report created user_id=%s spot_id=%s status=%s",
+            report.user_id,
+            report.spot_id,
+            report.status,
+        )
 
 
 # Authentication API Views
@@ -81,18 +103,28 @@ def register_user(request):
     username = request.data.get("username")
     email = request.data.get("email")
     password = request.data.get("password")
+    email_domain = _email_domain(email)
+
+    logger.info(
+        "Registration attempt username_present=%s email_domain=%s",
+        bool(username),
+        email_domain,
+    )
 
     if not username or not password:
+        logger.warning("Registration rejected: missing username or password")
         return Response({"detail": "Username and password are required"}, status=status.HTTP_400_BAD_REQUEST)
 
     # Validate username
     if User.objects.filter(username=username).exists():
+        logger.warning("Registration rejected: username already exists")
         return Response(
             {"username": ["A user with that username already exists."]}, status=status.HTTP_400_BAD_REQUEST
         )
 
     # Ensure it is a school email
-    if "@live.unilag.edu.ng" not in email:
+    if not email or "@live.unilag.edu.ng" not in email:
+        logger.warning("Registration rejected: invalid email domain=%s", email_domain)
         return Response(
             {"detail": "Email address is invalid, enter a University of Lagos valid email address."},
             status=status.HTTP_400_BAD_REQUEST,
@@ -104,6 +136,7 @@ def register_user(request):
     # Checking if the matriculation number is valid in the easiest way possible. It shouldn't be valid after 7 years max mostly because of strike
     try:
         if (int(year) - int(email[:2])) > 7 or (int(year) - int(email[:2])) < 0:
+            logger.warning("Registration rejected: email matriculation year check failed")
             return Response(
                 {
                     "detail": "Invalid email address, this email should no longer be valid. Email us if you think we've made a mistake"
@@ -115,10 +148,12 @@ def register_user(request):
 
     # Validate email
     if email and User.objects.filter(email=email).exists():
+        logger.warning("Registration rejected: email already exists")
         return Response({"email": ["A user with that email already exists."]}, status=status.HTTP_400_BAD_REQUEST)
 
     # Validate password length
     if len(password) < 8:
+        logger.warning("Registration rejected: password too short")
         return Response(
             {"password": ["Password must be at least 8 characters long."]}, status=status.HTTP_400_BAD_REQUEST
         )
@@ -145,13 +180,15 @@ def register_user(request):
         subject = "Verify your SpotOn account"
         message = f"Hi {username},\n\nPlease click the link below to verify your Unilag Email:\n\n{verify_link}"
         send_mail(subject, message, "gagbedejobi@gmail.com", [user.email])
+        logger.info("Registration created user_id=%s email_domain=%s", user.id, email_domain)
         return Response(
             {"message": "Registration successful! Please check your email to verify your account."},
             status=status.HTTP_201_CREATED,
         )
 
-    except Exception as e:
-        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception:
+        logger.exception("Registration failed with unexpected error")
+        return Response({"detail": "Registration failed. Please try again."}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @method_decorator(cache_page(60 * 60 * 2), name="dispatch")
@@ -163,7 +200,7 @@ class ClassFreeRoomsView(ListAPIView):
         now = datetime.now()
         day = now.weekday()
 
-        logger.debug("Free Class rooms have been return successfully")
+        logger.debug("Free halls query executed day_of_week=%s", day)
         return LectureHall.objects.filter(
             free_halls__day_of_week=day,
         ).distinct()
@@ -180,8 +217,10 @@ class VerifyEmailView(APIView):
         if user is not None and default_token_generator.check_token(user, token):
             user.is_active = True
             user.save()
+            logger.info("Email verification success user_id=%s", user.id)
             return Response({"message": "Email verified! You can now log in."}, status=status.HTTP_200_OK)
         else:
+            logger.warning("Email verification failed uid=%s", uidb64)
             return Response({"message": "Token expired!"}, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -195,6 +234,13 @@ class AmenitiesListView(ListAPIView):
         has_power_outlets = self.request.query_params.get("has_power_outlets")
         is_quiet = self.request.query_params.get("is_quiet")
         has_wifi = self.request.query_params.get("has_wifi")
+
+        logger.debug(
+            "Amenities filters power=%s quiet=%s wifi=%s",
+            has_power_outlets,
+            is_quiet,
+            has_wifi,
+        )
 
         if has_power_outlets is not None:
             queryset = queryset.filter(has_power_outlets=has_power_outlets.lower() == "true")
@@ -221,10 +267,20 @@ class SavedSpotsListView(ListAPIView):
 
     def get_queryset(self):
         # return SavedSpots.objects.filter(user__id=self.request.user.id)
-        return SavedSpots.objects.filter(user__id=1)
+        user_id = 1
+        logger.debug("Saved spots list requested user_id=%s", user_id)
+        return SavedSpots.objects.filter(user__id=user_id)
 
 
 # TODO: Uncomment the permission class in save spot view and change the user id to self.request.user.id in perform_create method to save the spot for the authenticated user
 class SaveSpotView(CreateAPIView):
     serializer_class = SavedSpotSerializer
     # permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        saved_spot = serializer.save()
+        logger.info(
+            "Saved spot created user_id=%s spot_id=%s",
+            saved_spot.user_id,
+            saved_spot.spot_id,
+        )

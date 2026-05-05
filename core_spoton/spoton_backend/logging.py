@@ -6,6 +6,19 @@ LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
+        "colored": {
+            "()": "colorlog.ColoredFormatter",
+            "format": "%(log_color)s%(levelname)-8s%(reset)s %(blue)s%(message)s",
+            "log_colors": {
+                "DEBUG": "cyan",
+                "INFO": "green",
+                "WARNING": "yellow",
+                "ERROR": "red",
+                "CRITICAL": "red,bg_white",
+            },
+            "secondary_log_colors": {},
+            "style": "%",
+        },
         "verbose": {"format": ">>> {levelname} {asctime} {module} {process:d} {thread:d} {message}", "style": "{"},
         "simple": {"format": ">>> {levelname} {module} {name} {message} {lineno}", "style": "{"},
         "standard": {"format": ">>> {asctime} {levelname} {name} {message}", "style": "{"},
@@ -26,12 +39,12 @@ LOGGING = {
             "level": "DEBUG",
             "filters": ["require_debug_true"],
             "class": "logging.StreamHandler",
-            "formatter": "simple",
+            "formatter": "colored",
         },
         "info_console": {
             "class": "logging.StreamHandler",
             "level": "INFO",
-            "formatter": "simple",
+            "formatter": "colored",
             "filters": ["info_only", "require_debug_true"],
         },
         "warning_file": {
