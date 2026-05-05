@@ -1,6 +1,9 @@
-pull_request:
-  branches:
-    -"*"
+name: lint
+
+on:
+  pull_request:
+    branches:
+      -"*"
 
 jobs:
   lint:
