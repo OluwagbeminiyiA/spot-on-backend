@@ -93,6 +93,15 @@ The API will be available at `http://127.0.0.1:8000/`.
 -   **Status Expiration**: Status reports older than 45 minutes are considered expired and will show as "Unknown" in the API response.
 -   **Email Validation**: The registration endpoint strictly enforces that the email ends with `@live.unilag.edu.ng` and validates matriculation year logic.
 
+## 📝 Logging Placement Rationale
+
+-   **Registration (`register_user`)**: info and warning logs capture attempts and validation failures to help diagnose onboarding issues without logging passwords or full emails.
+-   **Email verification (`VerifyEmailView`)**: info on success and warning on failure provide an audit trail for account activation problems.
+-   **Content creation (spots, reviews, status reports, saved spots)**: info logs record the creation events so operational and audit questions can be answered quickly.
+-   **Filtering and cache-backed queries**: debug logs note filter parameters and cache-hit paths to make it easier to trace inconsistent results during development.
+-   **Maintenance command (`clear_statuses`)**: info logs record when cleanup runs and how many rows were deleted; exceptions are logged for ops visibility.
+-   **PII safety**: logs intentionally exclude passwords and full email addresses; only coarse metadata (e.g., domain or IDs) is recorded.
+
 ## 🤝 Contributing
 
 1.  Fork the repository

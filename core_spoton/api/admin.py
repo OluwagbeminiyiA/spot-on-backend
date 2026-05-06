@@ -1,9 +1,9 @@
 from django.contrib import admin
 
-from api.models import Spot, StatusReport, Review, ClassFreeRooms, LectureHall
-
+from core_spoton.api.models import ClassFreeRooms, LectureHall, Review, Spot, StatusReport
 
 # Register your models here.
+
 
 class ClassFreeRoomsAdmin(admin.TabularInline):
     model = ClassFreeRooms
@@ -13,10 +13,15 @@ class ClassFreeRoomsAdmin(admin.TabularInline):
 class LectureHallAdmin(admin.ModelAdmin):
     model = LectureHall
     inlines = [ClassFreeRoomsAdmin]
-    list_display = ['name', 'is_approved']
+    list_display = ["name", "is_approved"]
 
 
-admin.site.register(Spot)
+class SpotAdmin(admin.ModelAdmin):
+    model = Spot
+    prepopulated_fields = {"slug": ("name",)}
+
+
+admin.site.register(Spot, SpotAdmin)
 admin.site.register(StatusReport)
 admin.site.register(Review)
 admin.site.register(LectureHall, LectureHallAdmin)
