@@ -32,3 +32,6 @@ jobs:
 
       - name: lint
         run: make lint
+        env:
+          DJANGO_SECRET_KEY: "dummy-secret-key-for-linting"
+          ALLOWED_HOSTS: "localhost,127.0.0.1"
